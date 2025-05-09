@@ -1,5 +1,6 @@
 import './App.css'
 import StarWarsEditor from './components/StarWarsEditor'
+import React from 'react'
 
 function App() {
   return (
@@ -9,4 +10,4 @@ function App() {
   )
 }
 
-export default App
+export default React.memo(App)
