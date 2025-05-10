@@ -27,12 +27,13 @@ const TextContent = styled.div<{ scrollPosition: number }>`
   color: #FFE81F;
   font-family: 'Arial', sans-serif;
   transform-origin: 50% 100%;
-  transform: rotateX(45deg) translateZ(0);
   text-align: center;
   font-size: 1.5rem;
   line-height: 1.5;
   will-change: transform;
   transform: ${props => `rotateX(45deg) translateY(${props.scrollPosition}px)`};
+  height: 500px; // 固定高さを設定して安定させる
+  overflow-y: visible; // コンテンツがはみ出ても表示
 `;
 
 const HiddenTextarea = styled.textarea`
@@ -68,6 +69,48 @@ const Cursor = styled.span`
   }
 `;
 
+// 行要素のスタイル（ワードラップに対応）
+const LineWrapper = styled.div`
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 100%;
+  position: relative;
+  padding: 0 20px; // 両側にパディングを追加して縦線のためのスペースを確保
+`;
+
+// 縦線ガイド（右側）
+const WidthGuide = styled.div<{ visible: boolean }>`
+  position: absolute;
+  width: 1px;
+  height: 100%;
+  background-color: rgba(255, 232, 31, 0.3);
+  top: 0;
+  right: 20px; // パディングに合わせて調整
+  bottom: 0;
+  opacity: ${props => (props.visible ? 1 : 0)};
+  transition: opacity 0.8s ease-out;
+`;
+
+// 縦のガイドライン（左側）
+const LeftGuide = styled.div<{ visible: boolean }>`
+  position: absolute;
+  width: 1px;
+  height: 100%;
+  background-color: rgba(255, 232, 31, 0.3);
+  top: 0;
+  left: 20px; // パディングに合わせて調整
+  bottom: 0;
+  opacity: ${props => (props.visible ? 1 : 0)};
+  transition: opacity 0.8s ease-out;
+`;
+
+// テキストコンテンツのコンテナ（高さ固定）
+const TextContentInner = styled.div`
+  position: relative;
+  top: 50%; // 中央に配置
+  transform: translateY(-50%); // 中央揃え
+`;
+
 const StarWarsEditor: React.FC = () => {
   const [text, setText] = useState<string>("# スターウォーズ風テキストエディタ\n\nエディタに文字を入力すると、\nスターウォーズのオープニングのように\n文字が流れていきます。\n\n編集してみてください！");
   const [scrollPositionRaw, setScrollPositionRaw] = useState<number>(0);
@@ -78,10 +121,25 @@ const StarWarsEditor: React.FC = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [cursorPosition, setCursorPosition] = useState<number>(text.length);
   const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const typingTimeoutRef = useRef<number | null>(null);
 
   const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
     setCursorPosition(e.target.selectionStart || 0);
+    
+    // 入力中状態を設定
+    setIsTyping(true);
+    
+    // 前のタイムアウトをクリア
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // 入力が停止して一定時間後にガイドを非表示
+    typingTimeoutRef.current = window.setTimeout(() => {
+      setIsTyping(false);
+    }, 1500); // 1.5秒後に非表示
   }, []);
 
   // カーソル位置を更新する関数
@@ -115,10 +173,22 @@ const StarWarsEditor: React.FC = () => {
   // フォーカスイベント処理
   const handleFocus = useCallback(() => {
     setIsFocused(true);
+    setIsTyping(true); // フォーカス時にガイドを表示
+    
+    // 前のタイムアウトをクリア
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // フォーカスから一定時間後にガイドを非表示
+    typingTimeoutRef.current = window.setTimeout(() => {
+      setIsTyping(false);
+    }, 2000); // 2秒後に非表示
   }, []);
   
   const handleBlur = useCallback(() => {
     setIsFocused(false);
+    setIsTyping(false); // フォーカスを失った時にガイドを非表示
   }, []);
 
   // イベントリスナーのクリーンアップ
@@ -126,6 +196,9 @@ const StarWarsEditor: React.FC = () => {
     return () => {
       if (wheelTimeoutRef.current) {
         clearTimeout(wheelTimeoutRef.current);
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
     };
   }, []);
@@ -160,16 +233,24 @@ const StarWarsEditor: React.FC = () => {
         const afterCursor = line.substring(cursorCol);
         
         return (
-          <div key={lineIndex}>
+          <LineWrapper key={lineIndex}>
+            <LeftGuide visible={isTyping} />
             {beforeCursor}<Cursor />{afterCursor || ' '}
-          </div>
+            <WidthGuide visible={isTyping} />
+          </LineWrapper>
         );
       }
       
       // カーソルがない行
-      return <div key={lineIndex}>{line || ' '}</div>;
+      return (
+        <LineWrapper key={lineIndex}>
+          {lineIndex === cursorLine && <LeftGuide visible={isTyping} />}
+          {line || ' '}
+          {lineIndex === cursorLine && <WidthGuide visible={isTyping} />}
+        </LineWrapper>
+      );
     });
-  }, [text, cursorPosition, isFocused]);
+  }, [text, cursorPosition, isFocused, isTyping]);
 
   return (
     <EditorContainer onClick={focusTextarea}>
@@ -186,7 +267,9 @@ const StarWarsEditor: React.FC = () => {
           spellCheck={false}
         />
         <TextContent scrollPosition={scrollPosition}>
-          {textLines}
+          <TextContentInner>
+            {textLines}
+          </TextContentInner>
         </TextContent>
       </TextContainer>
     </EditorContainer>
