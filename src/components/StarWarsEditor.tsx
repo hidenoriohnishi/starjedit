@@ -28,7 +28,7 @@ const TextContent = styled.div<{ scrollPosition: number }>`
   font-family: 'Arial', sans-serif;
   transform-origin: 50% 100%;
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 2.5rem;
   line-height: 1.5;
   will-change: transform;
   transform: ${props => `rotateX(45deg) translateY(${props.scrollPosition}px)`};
@@ -45,7 +45,7 @@ const HiddenTextarea = styled.textarea`
   z-index: 10;
   resize: none;
   font-family: 'Arial', sans-serif;
-  font-size: 1.5rem;
+  font-size: 2.5rem;
   line-height: 1.5;
   background: transparent;
   color: #FFE81F;
