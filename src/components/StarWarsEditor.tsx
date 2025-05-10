@@ -22,18 +22,18 @@ const TextContainer = styled.div`
 
 const TextContent = styled.div<{ scrollPosition: number }>`
   position: absolute;
-  width: 80%;
-  max-width: 800px;
+  width: 100%;
   color: #FFE81F;
   font-family: 'Arial', sans-serif;
   transform-origin: 50% 100%;
   text-align: center;
-  font-size: 2.5rem;
-  line-height: 1.5;
+  font-size: 4.5rem;
+  line-height: 1.2;
   will-change: transform;
   transform: ${props => `rotateX(45deg) translateY(${props.scrollPosition}px)`};
-  height: 500px; // 固定高さを設定して安定させる
-  overflow-y: visible; // コンテンツがはみ出ても表示
+  height: auto;
+  overflow-y: visible;
+  bottom: 0;
 `;
 
 const HiddenTextarea = styled.textarea`
@@ -45,8 +45,8 @@ const HiddenTextarea = styled.textarea`
   z-index: 10;
   resize: none;
   font-family: 'Arial', sans-serif;
-  font-size: 2.5rem;
-  line-height: 1.5;
+  font-size: 4.5rem;
+  line-height: 1.2;
   background: transparent;
   color: #FFE81F;
   border: none;
@@ -76,39 +76,38 @@ const LineWrapper = styled.div`
   max-width: 100%;
   position: relative;
   padding: 0 20px; // 両側にパディングを追加して縦線のためのスペースを確保
+  min-height: 100%; // 最小高さを100%に設定
+  height: 100%; // 高さを100%に設定
 `;
 
 // 縦線ガイド（右側）
-const WidthGuide = styled.div<{ visible: boolean }>`
+const WidthGuide = styled.div`
   position: absolute;
   width: 1px;
   height: 100%;
   background-color: rgba(255, 232, 31, 0.3);
   top: 0;
-  right: 20px; // パディングに合わせて調整
-  bottom: 0;
-  opacity: ${props => (props.visible ? 1 : 0)};
-  transition: opacity 0.8s ease-out;
+  right: 20px;
+  pointer-events: none;
 `;
 
 // 縦のガイドライン（左側）
-const LeftGuide = styled.div<{ visible: boolean }>`
+const LeftGuide = styled.div`
   position: absolute;
   width: 1px;
   height: 100%;
   background-color: rgba(255, 232, 31, 0.3);
   top: 0;
-  left: 20px; // パディングに合わせて調整
-  bottom: 0;
-  opacity: ${props => (props.visible ? 1 : 0)};
-  transition: opacity 0.8s ease-out;
+  left: 20px;
+  pointer-events: none;
 `;
 
 // テキストコンテンツのコンテナ（高さ固定）
 const TextContentInner = styled.div`
   position: relative;
-  top: 50%; // 中央に配置
-  transform: translateY(-50%); // 中央揃え
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 `;
 
 const StarWarsEditor: React.FC = () => {
@@ -234,9 +233,7 @@ const StarWarsEditor: React.FC = () => {
         
         return (
           <LineWrapper key={lineIndex}>
-            <LeftGuide visible={isTyping} />
             {beforeCursor}<Cursor />{afterCursor || ' '}
-            <WidthGuide visible={isTyping} />
           </LineWrapper>
         );
       }
@@ -244,9 +241,7 @@ const StarWarsEditor: React.FC = () => {
       // カーソルがない行
       return (
         <LineWrapper key={lineIndex}>
-          {lineIndex === cursorLine && <LeftGuide visible={isTyping} />}
           {line || ' '}
-          {lineIndex === cursorLine && <WidthGuide visible={isTyping} />}
         </LineWrapper>
       );
     });
@@ -267,9 +262,11 @@ const StarWarsEditor: React.FC = () => {
           spellCheck={false}
         />
         <TextContent scrollPosition={scrollPosition}>
+          <LeftGuide />
           <TextContentInner>
             {textLines}
           </TextContentInner>
+          <WidthGuide />
         </TextContent>
       </TextContainer>
     </EditorContainer>
