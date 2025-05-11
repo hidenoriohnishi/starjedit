@@ -7,32 +7,20 @@ function App() {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showLogo, setShowLogo] = useState(true);
   const [isScrollLocked, setIsScrollLocked] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(100);
 
-  const checkVisibility = useCallback(() => {
-    if (!editorRef.current) return;
-
-    const textContent = editorRef.current.querySelector('textarea');
-    if (!textContent) return;
-
-    const textRect = textContent.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const scrollTop = editorRef.current.scrollTop;
-    const containerHeight = editorRef.current.clientHeight;
-    const contentHeight = textContent.scrollHeight;
+  // スクロール位置に基づいてロゴの表示/非表示を制御
+  useEffect(() => {
+    // スクロール位置が0に近いほど、ロゴを非表示に
+    // スクロール位置が十分に大きい（下にスクロールした）場合、ロゴを表示
+    const threshold = 500; // この値は調整が必要かもしれません
     
-    // テキストが画面上部に表示されているかチェック
-    const isTextNearTop = textRect.top > -100 && textRect.top < viewportHeight * 0.3;
-    
-    // テキストが画面下部に十分スクロールされているかチェック
-    const isScrolledEnough = scrollTop + containerHeight >= contentHeight - 100;
-
-    // スクロールをロックするかどうかの判定
-    setIsScrollLocked(isScrolledEnough);
-    
-    // ロゴの表示条件：
-    // テキストが画面上部に表示されていない時のみロゴを表示
-    setShowLogo(!isTextNearTop);
-  }, []);
+    if (scrollPosition < threshold) {
+      setShowLogo(false);
+    } else {
+      setShowLogo(true);
+    }
+  }, [scrollPosition]);
 
   const handleScroll = useCallback((e: WheelEvent) => {
     if (!editorRef.current) return;
@@ -42,28 +30,33 @@ function App() {
       e.preventDefault();
       return;
     }
-
-    requestAnimationFrame(checkVisibility);
-  }, [checkVisibility, isScrollLocked]);
+  }, [isScrollLocked]);
 
   useEffect(() => {
     const container = editorRef.current;
     if (!container) return;
 
-    // スクロールとリサイズ時にチェック
+    // スクロールの制限のみをここで処理
     container.addEventListener('wheel', handleScroll, { passive: false });
-    window.addEventListener('resize', () => {
-      requestAnimationFrame(checkVisibility);
-    }, { passive: true });
     
-    // 初期チェック
-    checkVisibility();
-
     return () => {
       container.removeEventListener('wheel', handleScroll);
-      window.removeEventListener('resize', () => requestAnimationFrame(checkVisibility));
     };
-  }, [checkVisibility, handleScroll]);
+  }, [handleScroll]);
+
+  // スクロール位置の変更を受け取るハンドラー
+  const handleScrollPositionChange = (position: number) => {
+    setScrollPosition(position);
+
+    // スクロールロックの判定
+    if (editorRef.current) {
+      const scrollTop = editorRef.current.scrollTop;
+      const containerHeight = editorRef.current.clientHeight;
+      const contentHeight = editorRef.current.scrollHeight;
+      const isScrolledEnough = scrollTop + containerHeight >= contentHeight - 100;
+      setIsScrollLocked(isScrolledEnough);
+    }
+  };
 
   return (
     <div className="App">
@@ -74,7 +67,10 @@ function App() {
           overflowY: isScrollLocked ? 'hidden' : 'auto'
         }}
       >
-        <StarWarsEditor initialScrollPosition={100} />
+        <StarWarsEditor 
+          initialScrollPosition={scrollPosition} 
+          onScrollPositionChange={handleScrollPositionChange}
+        />
       </div>
       <div 
         className="logo-container"

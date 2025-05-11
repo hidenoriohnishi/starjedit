@@ -110,9 +110,13 @@ const TextContent = styled.textarea`
 
 interface StarWarsEditorProps {
   initialScrollPosition?: number;
+  onScrollPositionChange?: (position: number) => void;
 }
 
-const StarWarsEditor: React.FC<StarWarsEditorProps> = ({ initialScrollPosition = 100 }) => {
+const StarWarsEditor: React.FC<StarWarsEditorProps> = ({ 
+  initialScrollPosition = 100,
+  onScrollPositionChange 
+}) => {
   const [text, setText] = useState<string>("");
   const [scrollPosition, setScrollPosition] = useState<number>(initialScrollPosition);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -162,8 +166,14 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({ initialScrollPosition =
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    setScrollPosition(prev => prev - e.deltaY);
-  }, []);
+    const newPosition = scrollPosition - e.deltaY;
+    setScrollPosition(newPosition);
+    
+    // スクロール位置を親コンポーネントに通知
+    if (onScrollPositionChange) {
+      onScrollPositionChange(newPosition);
+    }
+  }, [scrollPosition, onScrollPositionChange]);
 
   const focusTextarea = useCallback(() => {
     if (textareaRef.current) {
