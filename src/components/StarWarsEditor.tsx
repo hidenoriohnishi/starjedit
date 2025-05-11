@@ -136,7 +136,7 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
   // ローカルストレージからテキストを読み込む
   useEffect(() => {
     const savedText = localStorage.getItem('starwarsText');
-    setText(savedText || "Star Editor\nverpisode 1");
+    setText(savedText || "May the words be with you! A text editor that brings the Force of creativity to your fingertips.\nWrite, edit, and share your stories across the galaxy with Star Jedit—where every keystroke is a step toward the light side of the digital frontier.");
   }, []);
 
   // テキストが変更されたときに高さを調整
