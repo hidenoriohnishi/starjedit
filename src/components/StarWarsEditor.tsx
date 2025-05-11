@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import StarBackground from './StarBackground';
-import { useThrottledValue } from '../hooks/useThrottledValue';
 
 const EditorContainer = styled.div`
   position: relative;
@@ -13,261 +12,86 @@ const EditorContainer = styled.div`
 
 const TextContainer = styled.div`
   position: absolute;
-  width: 100%;
-  height: 100%;
-  perspective: 400px;
+  inset: 0;
   display: flex;
   justify-content: center;
+  align-items: center;
+  perspective: 1000px;
 `;
 
-const TextContent = styled.div<{ scrollPosition: number }>`
-  position: absolute;
+const TextPanel = styled.div`
+  width: min(85vw, 1000px);
+  border: 2px solid rgba(255, 232, 31, 0.5);
+  background: rgba(0, 0, 0, 0.3);
+  transform: 
+    rotateX(45deg)
+    translateY(30vh);
+  transform-style: preserve-3d;
+  transform-origin: center bottom;
+`;
+
+const TextContent = styled.textarea`
   width: 100%;
-  color: #FFE81F;
-  font-family: 'Arial', sans-serif;
-  transform-origin: 50% 100%;
-  text-align: center;
-  font-size: 4.5rem;
-  line-height: 1.2;
-  will-change: transform;
-  transform: ${props => `rotateX(45deg) translateY(${props.scrollPosition}px)`};
+  min-height: 3em;
   height: auto;
-  overflow-y: visible;
-  bottom: 0;
-`;
-
-const HiddenTextarea = styled.textarea`
-  position: absolute;
-  opacity: 0;
-  width: 80%;
-  max-width: 800px;
-  height: 100%;
-  z-index: 10;
-  resize: none;
-  font-family: 'Arial', sans-serif;
-  font-size: 4.5rem;
-  line-height: 1.2;
+  padding: 2rem;
   background: transparent;
   color: #FFE81F;
   border: none;
   outline: none;
-`;
-
-// カーソル要素のスタイル
-const Cursor = styled.span`
-  display: inline-block;
-  width: 2px;
-  height: 1.2em;
-  background-color: #FFE81F;
-  margin-left: 2px;
-  vertical-align: middle;
-  animation: blink 1s step-end infinite;
-  
-  @keyframes blink {
-    from, to { opacity: 1; }
-    50% { opacity: 0; }
-  }
-`;
-
-// 行要素のスタイル（ワードラップに対応）
-const LineWrapper = styled.div`
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  max-width: 100%;
-  position: relative;
-  padding: 0 20px; // 両側にパディングを追加して縦線のためのスペースを確保
-  min-height: 100%; // 最小高さを100%に設定
-  height: 100%; // 高さを100%に設定
-`;
-
-// 縦線ガイド（右側）
-const WidthGuide = styled.div`
-  position: absolute;
-  width: 1px;
-  height: 100%;
-  background-color: rgba(255, 232, 31, 0.3);
-  top: 0;
-  right: 20px;
-  pointer-events: none;
-`;
-
-// 縦のガイドライン（左側）
-const LeftGuide = styled.div`
-  position: absolute;
-  width: 1px;
-  height: 100%;
-  background-color: rgba(255, 232, 31, 0.3);
-  top: 0;
-  left: 20px;
-  pointer-events: none;
-`;
-
-// テキストコンテンツのコンテナ（高さ固定）
-const TextContentInner = styled.div`
-  position: relative;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  resize: none;
+  font-family: 'Arial', sans-serif;
+  font-size: clamp(48px, 4.2vw + 3.6vh, 84px);
+  line-height: 1.2;
+  text-shadow: 0 0 5px #FFE81F;
+  overflow: hidden;
 `;
 
 const StarWarsEditor: React.FC = () => {
   const [text, setText] = useState<string>("# スターウォーズ風テキストエディタ\n\nエディタに文字を入力すると、\nスターウォーズのオープニングのように\n文字が流れていきます。\n\n編集してみてください！");
-  const [scrollPositionRaw, setScrollPositionRaw] = useState<number>(0);
-  // スクロール位置をスロットリングして、パフォーマンスを向上
-  const scrollPosition = useThrottledValue(scrollPositionRaw, 16);
-  const wheelTimeoutRef = useRef<number | null>(null);
-  
+  const [scrollPosition] = useState<number>(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [cursorPosition, setCursorPosition] = useState<number>(text.length);
-  const [isFocused, setIsFocused] = useState<boolean>(false);
-  const [isTyping, setIsTyping] = useState<boolean>(false);
-  const typingTimeoutRef = useRef<number | null>(null);
+
+  // テキストエリアの高さを自動調整する関数
+  const adjustTextareaHeight = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, []);
 
   const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
-    setCursorPosition(e.target.selectionStart || 0);
-    
-    // 入力中状態を設定
-    setIsTyping(true);
-    
-    // 前のタイムアウトをクリア
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    
-    // 入力が停止して一定時間後にガイドを非表示
-    typingTimeoutRef.current = window.setTimeout(() => {
-      setIsTyping(false);
-    }, 1500); // 1.5秒後に非表示
-  }, []);
+    adjustTextareaHeight();
+  }, [adjustTextareaHeight]);
 
-  // カーソル位置を更新する関数
-  const handleSelection = useCallback(() => {
-    if (textareaRef.current) {
-      setCursorPosition(textareaRef.current.selectionStart || 0);
-    }
-  }, []);
+  // 初期表示時にも高さを調整
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [adjustTextareaHeight]);
 
-  // スクロールイベントを最適化
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    
-    // スクロールイベントを間引く
-    if (wheelTimeoutRef.current) return;
-    
-    wheelTimeoutRef.current = window.setTimeout(() => {
-      wheelTimeoutRef.current = null;
-    }, 10);
-    
-    setScrollPositionRaw(prev => prev + e.deltaY);
   }, []);
 
   const focusTextarea = useCallback(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
-      setIsFocused(true);
     }
   }, []);
-  
-  // フォーカスイベント処理
-  const handleFocus = useCallback(() => {
-    setIsFocused(true);
-    setIsTyping(true); // フォーカス時にガイドを表示
-    
-    // 前のタイムアウトをクリア
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    
-    // フォーカスから一定時間後にガイドを非表示
-    typingTimeoutRef.current = window.setTimeout(() => {
-      setIsTyping(false);
-    }, 2000); // 2秒後に非表示
-  }, []);
-  
-  const handleBlur = useCallback(() => {
-    setIsFocused(false);
-    setIsTyping(false); // フォーカスを失った時にガイドを非表示
-  }, []);
-
-  // イベントリスナーのクリーンアップ
-  useEffect(() => {
-    return () => {
-      if (wheelTimeoutRef.current) {
-        clearTimeout(wheelTimeoutRef.current);
-      }
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // パフォーマンス向上のためメモ化した行の配列とカーソル表示
-  const textLines = React.useMemo(() => {
-    // テキストを行に分割
-    const lines = text.split('\n');
-    
-    // カーソル位置を計算
-    let currentPos = 0;
-    let cursorLine = 0;
-    let cursorCol = 0;
-    
-    // カーソルがある行と列を見つける
-    for (let i = 0; i < lines.length; i++) {
-      if (currentPos + lines[i].length >= cursorPosition) {
-        cursorLine = i;
-        cursorCol = cursorPosition - currentPos;
-        break;
-      }
-      // 改行文字の分も加算
-      currentPos += lines[i].length + 1;
-    }
-    
-    // 行ごとにJSX要素を生成
-    return lines.map((line, lineIndex) => {
-      // カーソルがある行の場合
-      if (lineIndex === cursorLine && isFocused) {
-        // 行をカーソル位置で分割
-        const beforeCursor = line.substring(0, cursorCol);
-        const afterCursor = line.substring(cursorCol);
-        
-        return (
-          <LineWrapper key={lineIndex}>
-            {beforeCursor}<Cursor />{afterCursor || ' '}
-          </LineWrapper>
-        );
-      }
-      
-      // カーソルがない行
-      return (
-        <LineWrapper key={lineIndex}>
-          {line || ' '}
-        </LineWrapper>
-      );
-    });
-  }, [text, cursorPosition, isFocused, isTyping]);
 
   return (
     <EditorContainer onClick={focusTextarea}>
       <StarBackground scrollPosition={scrollPosition} />
-      
       <TextContainer onWheel={handleWheel}>
-        <HiddenTextarea
-          ref={textareaRef}
-          value={text}
-          onChange={handleTextChange}
-          onSelect={handleSelection}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          spellCheck={false}
-        />
-        <TextContent scrollPosition={scrollPosition}>
-          <LeftGuide />
-          <TextContentInner>
-            {textLines}
-          </TextContentInner>
-          <WidthGuide />
-        </TextContent>
+        <TextPanel>
+          <TextContent
+            ref={textareaRef}
+            value={text}
+            onChange={handleTextChange}
+            spellCheck={false}
+          />
+        </TextPanel>
       </TextContainer>
     </EditorContainer>
   );
