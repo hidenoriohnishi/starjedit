@@ -1,6 +1,6 @@
 import './App.css'
 import StarWarsEditor from './components/StarWarsEditor'
-import React, { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import starLogo from './assets/star-jedit-logo.svg'
 import { useEditor } from './contexts/EditorContext'
 

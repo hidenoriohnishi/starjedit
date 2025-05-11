@@ -1,10 +1,11 @@
 {
-  "name": "starwars",
+  "name": "star-jedit",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "cp src/assets/icon.ico public/favicon.ico",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

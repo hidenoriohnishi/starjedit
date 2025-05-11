@@ -151,8 +151,12 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
   }, [text, adjustTextareaHeight]);
 
   const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setText(e.target.value);
+    const newText = e.target.value;
+    setText(newText);
     setIsEditing(true);
+    
+    // テキストをローカルストレージに保存
+    localStorage.setItem('starwarsText', newText);
     
     // 既存のタイマーをクリア
     if (editingTimeoutRef.current !== null) {
@@ -198,6 +202,8 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
 
   const handleClear = useCallback(() => {
     setText("");
+    // ローカルストレージからテキストを削除
+    localStorage.removeItem('starwarsText');
     adjustTextareaHeight();
   }, [adjustTextareaHeight]);
 
@@ -226,6 +232,8 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
       reader.onload = (e) => {
         const content = e.target?.result as string;
         setText(content);
+        // ローカルストレージにテキストを保存
+        localStorage.setItem('starwarsText', content);
         adjustTextareaHeight();
       };
       reader.readAsText(file);
