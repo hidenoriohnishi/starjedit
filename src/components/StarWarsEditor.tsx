@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import StarBackground from './StarBackground';
 import { FaTrashAlt, FaFileUpload, FaDownload } from 'react-icons/fa';
+import { useEditor } from '../contexts/EditorContext';
 
 const EditorContainer = styled.div`
   position: relative;
@@ -119,7 +120,7 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
 }) => {
   const [text, setText] = useState<string>("");
   const [scrollPosition, setScrollPosition] = useState<number>(initialScrollPosition);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const { isEditing, setIsEditing, handleScrollPositionChange } = useEditor();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editingTimeoutRef = useRef<number | null>(null);
@@ -162,7 +163,7 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
     editingTimeoutRef.current = window.setTimeout(() => {
       setIsEditing(false);
     }, 2000);
-  }, []);
+  }, [setIsEditing]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -173,7 +174,10 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
     if (onScrollPositionChange) {
       onScrollPositionChange(newPosition);
     }
-  }, [scrollPosition, onScrollPositionChange]);
+    
+    // コンテキストにスクロール位置を通知
+    handleScrollPositionChange(newPosition);
+  }, [scrollPosition, onScrollPositionChange, handleScrollPositionChange]);
 
   const focusTextarea = useCallback(() => {
     if (textareaRef.current) {
@@ -190,7 +194,7 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
         setIsEditing(false);
       }, 2000);
     }
-  }, []);
+  }, [setIsEditing]);
 
   const handleClear = useCallback(() => {
     setText("");

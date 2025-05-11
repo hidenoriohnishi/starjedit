@@ -2,25 +2,13 @@ import './App.css'
 import StarWarsEditor from './components/StarWarsEditor'
 import React, { useRef, useEffect, useState, useCallback } from 'react'
 import starLogo from './assets/star-jedit-logo.svg'
+import { useEditor } from './contexts/EditorContext'
 
 function App() {
   const editorRef = useRef<HTMLDivElement>(null);
-  const [showLogo, setShowLogo] = useState(true);
+  const { showLogo } = useEditor();
   const [isScrollLocked, setIsScrollLocked] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(100);
-
-  // スクロール位置に基づいてロゴの表示/非表示を制御
-  useEffect(() => {
-    // スクロール位置が0に近いほど、ロゴを非表示に
-    // スクロール位置が十分に大きい（下にスクロールした）場合、ロゴを表示
-    const threshold = 500; // この値は調整が必要かもしれません
-    
-    if (scrollPosition < threshold) {
-      setShowLogo(false);
-    } else {
-      setShowLogo(true);
-    }
-  }, [scrollPosition]);
 
   const handleScroll = useCallback((e: WheelEvent) => {
     if (!editorRef.current) return;
