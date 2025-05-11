@@ -19,22 +19,23 @@ const TextContainer = styled.div`
   perspective: 1000px;
 `;
 
-const TextPanel = styled.div`
-  width: min(85vw, 1000px);
+const TextPanel = styled.div<{ scrollPos: number }>`
+  width: min(95vw, 1500px);
   border: 2px solid rgba(255, 232, 31, 0.5);
   background: rgba(0, 0, 0, 0.3);
   transform: 
     rotateX(45deg)
-    translateY(30vh);
+    translateY(${props => props.scrollPos}px);
   transform-style: preserve-3d;
   transform-origin: center bottom;
+  transition: transform 0.1s ease-out;
 `;
 
 const TextContent = styled.textarea`
   width: 100%;
   min-height: 3em;
   height: auto;
-  padding: 2rem;
+  padding: 1rem;
   background: transparent;
   color: #FFE81F;
   border: none;
@@ -43,13 +44,13 @@ const TextContent = styled.textarea`
   font-family: 'Arial', sans-serif;
   font-size: clamp(48px, 4.2vw + 3.6vh, 84px);
   line-height: 1.2;
-  text-shadow: 0 0 5px #FFE81F;
+  text-shadow: 0 0 3›0px rgb(135, 131, 0);
   overflow: hidden;
 `;
 
 const StarWarsEditor: React.FC = () => {
   const [text, setText] = useState<string>("# スターウォーズ風テキストエディタ\n\nエディタに文字を入力すると、\nスターウォーズのオープニングのように\n文字が流れていきます。\n\n編集してみてください！");
-  const [scrollPosition] = useState<number>(0);
+  const [scrollPosition, setScrollPosition] = useState<number>(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // テキストエリアの高さを自動調整する関数
@@ -72,6 +73,7 @@ const StarWarsEditor: React.FC = () => {
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
+    setScrollPosition(prev => prev - e.deltaY);
   }, []);
 
   const focusTextarea = useCallback(() => {
@@ -84,7 +86,7 @@ const StarWarsEditor: React.FC = () => {
     <EditorContainer onClick={focusTextarea}>
       <StarBackground scrollPosition={scrollPosition} />
       <TextContainer onWheel={handleWheel}>
-        <TextPanel>
+        <TextPanel scrollPos={scrollPosition}>
           <TextContent
             ref={textareaRef}
             value={text}
