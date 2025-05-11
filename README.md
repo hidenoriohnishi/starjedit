@@ -1,6 +1,6 @@
 # <img src="src/assets/star-jedit-logo.svg" alt="Star Jedit" width="400">
 
-[![Star Jedit Demo](demo.gif)](https://starjedit.vercel.app/)
+<img src="./public/demo.gif" alt="Star Jedit Demo" width="800">
 
 [🌐 Live Demo](https://starjedit.vercel.app/)
 
