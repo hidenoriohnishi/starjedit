@@ -67,6 +67,7 @@ const TextContainer = styled.div`
   padding-top: 10vh;
   perspective: 1000px;
   perspective-origin: center 0%;
+  transform-style: preserve-3d;
 `;
 
 const TextPanel = styled.div<{ scrollPos: number; isEditing: boolean }>`
@@ -76,7 +77,7 @@ const TextPanel = styled.div<{ scrollPos: number; isEditing: boolean }>`
   background: rgba(0, 0, 0, 0.3);
   transform: 
     rotateX(60deg)
-    translateY(${props => props.scrollPos}px)
+    translateY(calc(${props => props.scrollPos}px + 120vh))
     translateZ(-800px);
   transform-style: preserve-3d;
   transform-origin: center 0;
@@ -88,7 +89,6 @@ const TextPanel = styled.div<{ scrollPos: number; isEditing: boolean }>`
 const TextContent = styled.textarea`
   width: 100%;
   min-height: 1.2em;
-  height: auto;
   padding: 20px;
   background: transparent;
   color: #FFE81F;
@@ -100,7 +100,6 @@ const TextContent = styled.textarea`
   font-size: clamp(48px, 4.2vw + 3.6vh, 84px);
   line-height: 1.2;
   text-shadow: 0 0 30px rgb(135, 131, 0);
-  overflow: hidden;
   text-align: center;
 
   &::selection {
@@ -109,9 +108,13 @@ const TextContent = styled.textarea`
   }
 `;
 
-const StarWarsEditor: React.FC = () => {
+interface StarWarsEditorProps {
+  initialScrollPosition?: number;
+}
+
+const StarWarsEditor: React.FC<StarWarsEditorProps> = ({ initialScrollPosition = 100 }) => {
   const [text, setText] = useState<string>("");
-  const [scrollPosition, setScrollPosition] = useState<number>(0);
+  const [scrollPosition, setScrollPosition] = useState<number>(initialScrollPosition);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
