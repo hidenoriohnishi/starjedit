@@ -1,5 +1,9 @@
 # <img src="src/assets/star-jedit-logo.svg" alt="Star Jedit" width="400">
 
+[![Star Jedit Demo](demo.gif)](https://starjedit.vercel.app/)
+
+[🌐 Live Demo](https://starjedit.vercel.app/)
+
 ## A long time ago, in a galaxy not so far away...
 
 # STAR JEDIT
