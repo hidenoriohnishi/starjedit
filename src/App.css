@@ -62,22 +62,27 @@
 }
 
 .logo-container {
-  width: 200px;
   position: fixed;
-  top: 50%;
-  left: calc(50% - 100px);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   z-index: 10;
   pointer-events: none;
-  transition: all 0.3s ease;
-  will-change: transform, opacity;
+  transition: transform 0.5s ease-out;
+  will-change: transform;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .main-logo {
-  width: 100%;
+  width: 200px;
   height: auto;
   display: block;
-  transform: translateY(-50%);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
 }

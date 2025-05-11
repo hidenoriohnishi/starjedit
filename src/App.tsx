@@ -3,6 +3,7 @@ import StarWarsEditor from './components/StarWarsEditor'
 import React from 'react'
 import { useScrollAnimation } from './hooks/useScrollAnimation'
 import starLogo from './assets/star-jedit-logo.svg'
+import LogoStarBackground from './components/LogoStarBackground'
 
 function App() {
   const scrollProgress = useScrollAnimation();
@@ -20,9 +21,10 @@ function App() {
       <div 
         className="logo-container"
         style={{
-          opacity: 1 - scrollProgress
+          transform: `translateY(${-scrollProgress * 100}vh)`
         }}
       >
+        <LogoStarBackground />
         <img src={starLogo} alt="Star JEdit Logo" className="main-logo" />
       </div>
     </div>
