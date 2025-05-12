@@ -216,7 +216,7 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
       e.preventDefault();
       const touch = e.touches[0];
       const deltaY = startY - touch.clientY;
-      const newPosition = scrollPosition - (deltaY * 5);
+      const newPosition = scrollPosition - (deltaY * 3);
       setScrollPosition(newPosition);
       
       if (onScrollPositionChange) {
