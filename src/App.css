@@ -60,6 +60,7 @@
   padding: 2rem;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom;
 }
 
 /* テキストパネルのスタイル */
@@ -71,7 +72,13 @@
     perspective(1000px)
     rotateX(60deg)
     translateZ(-800px)
-    translateY(100vh); /* 初期位置を画面下に設定 */
+    translateY(100vh);
+  -webkit-transform-style: preserve-3d;
+  -webkit-transform: 
+    perspective(1000px)
+    rotateX(60deg)
+    translateZ(-800px)
+    translateY(100vh);
 }
 
 .text-content {
@@ -85,10 +92,11 @@
   resize: none;
   font-family: 'Arial', sans-serif;
   font-weight: 700;
-  font-size: clamp(48px, 4.2vw + 3.6vh, 84px);
+  font-size: clamp(32px, 4.2vw + 3.6vh, 84px);
   line-height: 1.2;
   text-shadow: 0 0 30px rgb(135, 131, 0);
   text-align: center;
+  -webkit-text-size-adjust: 100%;
 }
 
 .logo-container {
@@ -111,4 +119,20 @@
   height: auto;
   display: block;
   filter: drop-shadow(0 0 10px rgba(255, 232, 31, 0.3));
+}
+
+/* モバイルデバイス向けのスタイル調整 */
+@media (max-width: 768px) {
+  .editor-container {
+    padding: 1rem;
+  }
+
+  .text-panel {
+    width: 95vw;
+  }
+
+  .text-content {
+    font-size: clamp(24px, 4.2vw + 3.6vh, 48px);
+    padding: 15px;
+  }
 }

@@ -124,6 +124,7 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editingTimeoutRef = useRef<number | null>(null);
+  const isHoveringButtonsRef = useRef<boolean>(false);
 
   // テキストエリアの高さを自動調整する関数
   const adjustTextareaHeight = useCallback(() => {
@@ -163,7 +164,30 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
       window.clearTimeout(editingTimeoutRef.current);
     }
     
-    // 新しいタイマーをセット
+    // ボタンにマウスが乗っていない場合のみ、タイマーをセット
+    if (!isHoveringButtonsRef.current) {
+      editingTimeoutRef.current = window.setTimeout(() => {
+        setIsEditing(false);
+      }, 2000);
+    }
+  }, [setIsEditing]);
+
+  const handleButtonsMouseEnter = useCallback(() => {
+    isHoveringButtonsRef.current = true;
+    setIsEditing(true);
+    // 既存のタイマーをクリア
+    if (editingTimeoutRef.current !== null) {
+      window.clearTimeout(editingTimeoutRef.current);
+      editingTimeoutRef.current = null;
+    }
+  }, [setIsEditing]);
+
+  const handleButtonsMouseLeave = useCallback(() => {
+    isHoveringButtonsRef.current = false;
+    // マウスが離れた後、一定時間後に編集モードを解除
+    if (editingTimeoutRef.current !== null) {
+      window.clearTimeout(editingTimeoutRef.current);
+    }
     editingTimeoutRef.current = window.setTimeout(() => {
       setIsEditing(false);
     }, 2000);
@@ -183,6 +207,35 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
     handleScrollPositionChange(newPosition);
   }, [scrollPosition, onScrollPositionChange, handleScrollPositionChange]);
 
+  // タッチイベントのハンドラーを追加
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const startY = touch.clientY;
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const deltaY = startY - touch.clientY;
+      const newPosition = scrollPosition + deltaY;
+      setScrollPosition(newPosition);
+      
+      if (onScrollPositionChange) {
+        onScrollPositionChange(newPosition);
+      }
+      
+      // コンテキストにスクロール位置を通知
+      handleScrollPositionChange(newPosition);
+    };
+    
+    const handleTouchEnd = () => {
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+    
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+  }, [scrollPosition, onScrollPositionChange, handleScrollPositionChange]);
+
   const focusTextarea = useCallback(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
@@ -193,10 +246,12 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
         window.clearTimeout(editingTimeoutRef.current);
       }
       
-      // 新しいタイマーをセット
-      editingTimeoutRef.current = window.setTimeout(() => {
-        setIsEditing(false);
-      }, 2000);
+      // ボタンにマウスが乗っていない場合のみ、タイマーをセット
+      if (!isHoveringButtonsRef.current) {
+        editingTimeoutRef.current = window.setTimeout(() => {
+          setIsEditing(false);
+        }, 2000);
+      }
     }
   }, [setIsEditing]);
 
@@ -208,42 +263,88 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
   }, [adjustTextareaHeight]);
 
   const handleSave = useCallback(() => {
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'starwars-text.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // 日付ベースのファイル名を生成
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const fileName = `${year}${month}${day}_${hours}${minutes}${seconds}.txt`;
+      
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('ファイルの保存中にエラーが発生しました:', error);
+      alert('ファイルの保存中にエラーが発生しました。');
+    }
   }, [text]);
 
   const handleLoad = useCallback(() => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+    try {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''; // 同じファイルを再度選択できるようにする
+        fileInputRef.current.click();
+      }
+    } catch (error) {
+      console.error('ファイル選択ダイアログの表示中にエラーが発生しました:', error);
+      alert('ファイル選択ダイアログの表示中にエラーが発生しました。');
     }
   }, []);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        setText(content);
-        // ローカルストレージにテキストを保存
-        localStorage.setItem('starwarsText', content);
-        adjustTextareaHeight();
-      };
-      reader.readAsText(file);
+    try {
+      const file = e.target.files?.[0];
+      if (file) {
+        if (file.size > 1024 * 1024) { // 1MB以上のファイルは拒否
+          alert('ファイルサイズが大きすぎます。1MB以下のファイルを選択してください。');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const content = e.target?.result as string;
+            if (content) {
+              setText(content);
+              localStorage.setItem('starwarsText', content);
+              adjustTextareaHeight();
+            }
+          } catch (error) {
+            console.error('ファイルの読み込み中にエラーが発生しました:', error);
+            alert('ファイルの読み込み中にエラーが発生しました。');
+          }
+        };
+        reader.onerror = () => {
+          console.error('ファイルの読み込み中にエラーが発生しました');
+          alert('ファイルの読み込み中にエラーが発生しました。');
+        };
+        reader.readAsText(file);
+      }
+    } catch (error) {
+      console.error('ファイルの処理中にエラーが発生しました:', error);
+      alert('ファイルの処理中にエラーが発生しました。');
     }
   }, [adjustTextareaHeight]);
 
   return (
     <EditorContainer onClick={focusTextarea}>
       <StarBackground scrollPosition={scrollPosition} />
-      <ActionButtons isEditing={isEditing}>
+      <ActionButtons 
+        isEditing={isEditing}
+        onMouseEnter={handleButtonsMouseEnter}
+        onMouseLeave={handleButtonsMouseLeave}
+      >
         <ActionButton onClick={handleClear} title="クリア">
           <FaTrashAlt />
         </ActionButton>
@@ -260,13 +361,21 @@ const StarWarsEditor: React.FC<StarWarsEditorProps> = ({
         accept=".txt,.md"
         onChange={handleFileChange}
       />
-      <TextContainer onWheel={handleWheel}>
+      <TextContainer 
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+      >
         <TextPanel scrollPos={scrollPosition} isEditing={isEditing}>
           <TextContent
             ref={textareaRef}
             value={text}
             onChange={handleTextChange}
-            spellCheck={false}
+            onFocus={() => setIsEditing(true)}
+            onBlur={() => {
+              if (!isHoveringButtonsRef.current) {
+                setIsEditing(false);
+              }
+            }}
           />
         </TextPanel>
       </TextContainer>
