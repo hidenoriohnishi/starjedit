@@ -34,50 +34,6 @@ and your stories ever bright.
 
 ---
 
-## Overview
-
-Star Jedit is a modern text editor designed for creative writing. With a sleek interface and powerful editing tools, it helps bring your ideas to life.
-
-## Features
-
-- Intuitive user interface
-- Real-time preview
-- Customizable themes
-- Markdown support
-- Syntax highlighting
-
-## Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/star-jedit.git
-
-# Navigate to the directory
-cd star-jedit
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-The built files will be output to the `dist` directory.
-
-## Deployment
-
-Deploy easily with Vercel:
-
-```bash
-npx vercel
-```
-
 ## License
 
 Released under the MIT License.
